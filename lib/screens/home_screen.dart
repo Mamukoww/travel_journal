@@ -3,6 +3,8 @@ import '../models/trip.dart';
 import 'add_edit_trip_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -11,31 +13,44 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Trip> _trips = [
-    Trip(
-      title: 'Поездка в Париж',
-      date: '2024-01-01',
-      description: 'Прекрасная поездка в Париж.',
-      photoUrl: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?q=80&w=2787&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    ),
-    Trip(
-      title: 'Поездка в Лондон',
-      date: '2024-02-02',
-      description: 'Замечательная поездка в Лондон.',
-      photoUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    ),
-    Trip(
-      title: 'Поездка в Нью-Йорк',
-      date: '2020-02-20',
-      description: 'Фантастическая поездка в Нью-Йорк.',
-      photoUrl: 'https://images.unsplash.com/photo-1516893842880-5d8aada7ac05?q=80&w=2864&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    ),
-  ];
+  List<Trip> _trips = [];
 
-  void _addNewTrip(Trip trip) {
+  @override
+  void initState() {
+    super.initState();
+    _loadTrips();
+  }
+
+  Future<void> _loadTrips() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? tripsJson = prefs.getString('trips');
+    if (tripsJson != null) {
+      List<dynamic> tripsList = jsonDecode(tripsJson);
+      _trips = tripsList.map((json) => Trip.fromJson(json)).toList();
+    }
+    setState(() {});
+  }
+
+  Future<void> _saveTrips() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> tripsJson = _trips.map((trip) => jsonEncode(trip.toJson())).toList();
+    await prefs.setString('trips', jsonEncode(tripsJson));
+  }
+
+  Future<void> _fetchWeather(Trip trip) async {
+    // Здесь должна быть логика получения погоды по сети
+    // Например, вызов API погоды
+    await Future.delayed(Duration(seconds: 2)); // Эмуляция задержки сети
+    trip.weather = 'Солнечно 25°C'; // Пример данных о погоде
+    await _saveTrips(); // Сохранение обновленного списка поездок
+  }
+
+  void _addNewTrip(Trip trip) async {
     setState(() {
       _trips.add(trip);
     });
+    await _fetchWeather(trip); // Загрузка погоды для новой поездки
+    await _saveTrips(); // Сохранение обновленного списка поездок
   }
 
   String _formatDate(String date) {
@@ -75,7 +90,13 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, index) {
           return ListTile(
             title: Text(sortedTrips[index].title),
-            subtitle: Text(_formatDate(sortedTrips[index].date)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_formatDate(sortedTrips[index].date)),
+                Text(sortedTrips[index].weather),
+              ],
+            ),
             onTap: () {
               Navigator.pushNamed(
                 context,

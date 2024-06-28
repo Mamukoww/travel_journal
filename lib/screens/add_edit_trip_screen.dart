@@ -32,7 +32,7 @@ class _AddEditTripScreenState extends State<AddEditTripScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Добавить/Редактировать поездку'),
+        title: Text('Добавить поездку'),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -97,14 +97,12 @@ class _AddEditTripScreenState extends State<AddEditTripScreen> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-                    // Создание новой поездки
                     Trip newTrip = Trip(
                       title: _tripTitle,
                       date: _tripDate,
                       description: _tripDescription,
                       photoUrl: _photoUrl,
                     );
-                    // Возврат новой поездки на главный экран
                     Navigator.pop(context, newTrip);
                   }
                 },
